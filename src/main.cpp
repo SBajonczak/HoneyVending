@@ -2,36 +2,44 @@
 #include <EEPROM.h>  // Zwischenspeicher
 #include <U8g2lib.h> /* aus dem Bibliotheksverwalter */
 
+// Definiert die Pin Belegeung
 #define RELAY_CH1 3
 #define COIN_SELECTOR 0
-
 #define BUTTON_PLUS 4
 #define BUTTON_INPUT_BOX_1 5
-
 #define BOX_LOCKED_VCC_SIGNAL 7
 #define BOX_1_LOCKED_SIGNAL 6
-
 #define EEPROM_INSERTED_AMOUNT_VALUE_INDEX 0
 
+// Wer experimentiern will kann dieses Feature Aktivieren.
+// Das sorgt dafür das bereits eingeworfene bzw erkennte Werte nach einem neustart noch vorhanden sind.
+// #define USE_EEPROM
+
+// Dies definiert die Impulse die vom Counter nach dem Anlernen kommen
+// 50 Cent wurden so angelernt das ein Impuls kommt
+// 1 Euro sendet der Münzer zwei Impulse
+// 2 Euro sendet der Münzer drei Impulse
 const int PULSE_AMOUNT_50_CENT = 1;
 const int PULSE_AMOUNT_1_EURO = 2;
 const int PULSE_AMOUNT_2_EURO = 3;
+// Dies setzt den Preis fest, der geprüft werden soll
+float PriceForBox = 7.5;
 
-float PriceForBox=7.5;
+// Systemvariablen
 int impulsCount = 0;
 int selectedBox = 0;
 int AcutallyOpenedBox = 0;
-// Inserted Value
 double totalInsertedCoinValue = 0;
-// pulse Counter
-
 int i = 0;
 // Maximale Zeichen ausgabe auf dem Display (Fontsize 12 = 13 Zeichen maximal in einer Zeile)
 char displayOutput[30];
 
-// Umlaute
+//Dies sind die Umlaute UTF Codes, wenn diese verwendet werden sollen.
 // \xe4\xf6\xfc
 // äöü
+
+// Für den Fall das ein HELTEC Device verwendet wird ist diese Zeile zu aktivieren und die darunter liegende auszukommentieren.
+// U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
 
 // Display
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(
@@ -40,21 +48,20 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(
     // No Rotation required
     U8X8_PIN_NONE);
 
+// Hilfsfunktion für das Anordnen von Textzeilen
 #define LCDWidth u8g2.getDisplayWidth()
 #define ALIGN_CENTER(t) ((LCDWidth - (u8g2.getUTF8Width(t))) / 2)
 #define ALIGN_RIGHT(t) (LCDWidth - u8g2.getUTF8Width(t))
 #define ALIGN_LEFT 0
 
-// Onboard LCD HELTEC
-// U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, /* clock=*/ 15, /* data=*/ 4, /* reset=*/ 16);
-
+// Handler für den Impuls Pin
 void incomingImpuls()
 {
   impulsCount = impulsCount + 1;
   i = 0;
 }
 
-// Get the Currency by the pulses
+// Ermittlung der eingeworfener Münze
 double GetInsertedCurrency()
 {
   Serial.print("Impuls ");
@@ -83,6 +90,7 @@ double GetInsertedCurrency()
   return 0;
 }
 
+// Initialisier das Display
 void InitDisplay()
 {
   u8g2.setBusClock(800000); // experimental
@@ -90,6 +98,8 @@ void InitDisplay()
   u8g2.enableUTF8Print();
   u8g2.clearBuffer();
 }
+
+// Hiermit werden die Buttons initiiert.
 void InitButtons()
 {
 
@@ -100,7 +110,7 @@ void InitButtons()
 
 void HandleOpenedBox()
 {
-  digitalWrite(RELAY_CH1, HIGH); // switch on LED1
+  digitalWrite(RELAY_CH1, HIGH);
 }
 
 void InitBoxSignals()
@@ -118,19 +128,22 @@ void setup()
   u8g2.clearBuffer();
   totalInsertedCoinValue = 0;
   pinMode(RELAY_CH1, OUTPUT);
-  digitalWrite(RELAY_CH1, HIGH); // switch on LED1
+  digitalWrite(RELAY_CH1, HIGH);
 
   attachInterrupt(COIN_SELECTOR, incomingImpuls, RISING);
 
   Serial.begin(9600); // Setup serial at 9600 baud
   InitDisplay();
-  // float val;
-  // EEPROM.get(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, val);
-  // Serial.println(val);
-  // if (!isnan(val))
-  // {
-  //   totalInsertedCoinValue = val;
-  // }
+
+#if USE_EEPROM
+  float val;
+  EEPROM.get(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, val);
+  Serial.println(val);
+  if (!isnan(val))
+  {
+    totalInsertedCoinValue = val;
+  }
+#endif
   Serial.println("Ready..");
 }
 
@@ -144,7 +157,7 @@ void PrintCredit()
   u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
   // Print Value
   strcpy(displayOutput, "");
-  dtostrf(7.5, 2, 2, &displayOutput[strlen(displayOutput)]);
+  dtostrf(PriceForBox, 2, 2, &displayOutput[strlen(displayOutput)]);
   u8g2.drawStr(ALIGN_RIGHT(displayOutput), 20, displayOutput);
 
   u8g2.setFont(u8g2_font_helvB12_tf);
@@ -179,8 +192,6 @@ void PrintCredit()
 void DisplayTakeProduct(int selectedBoxNumber)
 {
 
-  // \xe4\xf6\xfc
-  // äöü
   u8g2.clearBuffer();
   sprintf(displayOutput, "Fach %i ist offen ", selectedBoxNumber);
   u8g2.setFont(u8g2_font_helvB12_tf);
@@ -275,6 +286,7 @@ void HandleCoinInsertions()
   if (value > 0)
   {
     totalInsertedCoinValue += value;
+    // Wert in den EEPROM schreiben
     EEPROM.put(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, totalInsertedCoinValue);
   }
 }
@@ -299,6 +311,7 @@ void loop()
       else
       {
         selectedBox = 0;
+        // Wert in den EEPROM schreiben
         EEPROM.put(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, 0);
         totalInsertedCoinValue = 0;
         OpenDoor(RELAY_CH1, selectedBox);
