@@ -40,7 +40,7 @@ Ich habe ein [Türschloß](https://www.ebay.de/itm/Elektro-Magnetschloss-Elektri
 # Verkabelung
 Das Ganze ist wie folgt zusammengesetzt. Aktuell ist es noch notwendig, dass zwei Separate Stomkreise verwendet werden. 12V und 5V. 
 
-![](https://github.com/SBajonczak/HoneyVending/blob/master/img/Schematic_HoenyVending.png)
+![](Img/Schematic_HoenyVending.png)
 
 # Offene Todos
 
