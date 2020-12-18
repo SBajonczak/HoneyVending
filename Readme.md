@@ -2,6 +2,8 @@
 Dies soll mein kleines Honigautomaten Projekt vorstellen. 
 Grundlegend habe ich den Fokus darauf gelegt den Quelltext so einfach wie nur möglich zu gestalten.
 
+Erstellt und Kompliiert habe ich das Projekt mit [Plattform IO in VS Code](https://platformio.org/install/ide?install=vscode). Vorteil war für ich das hier eine Autovervollständigung vorhanden ist (Intellisense).
+
 
 # Teileliste
 Folgende Geräte habe ich im Einsatz
