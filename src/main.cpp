@@ -1,9 +1,6 @@
 #include <Arduino.h>
-
+#include <EEPROM.h>  // Zwischenspeicher
 #include <U8g2lib.h> /* aus dem Bibliotheksverwalter */
-/*
-  D v d B. ACTIVE LOW.
- */
 
 #define RELAY_CH1 3
 #define COIN_SELECTOR 0
@@ -11,13 +8,19 @@
 #define BUTTON_PLUS 4
 #define BUTTON_INPUT_BOX_1 5
 
+#define BOX_LOCKED_VCC_SIGNAL 7
+#define BOX_1_LOCKED_SIGNAL 6
+
+#define EEPROM_INSERTED_AMOUNT_VALUE_INDEX 0
+
 const int PULSE_AMOUNT_50_CENT = 1;
 const int PULSE_AMOUNT_1_EURO = 2;
 const int PULSE_AMOUNT_2_EURO = 3;
 
+float PriceForBox=7.5;
 int impulsCount = 0;
 int selectedBox = 0;
-
+int AcutallyOpenedBox = 0;
 // Inserted Value
 double totalInsertedCoinValue = 0;
 // pulse Counter
@@ -54,6 +57,11 @@ void incomingImpuls()
 // Get the Currency by the pulses
 double GetInsertedCurrency()
 {
+  Serial.print("Impuls ");
+  Serial.print(impulsCount);
+  Serial.print(" counter ");
+  Serial.print(i);
+  Serial.println();
   i = i + 1;
   delay(1);
   if (i >= 5)
@@ -87,13 +95,25 @@ void InitButtons()
 
   digitalWrite(BUTTON_PLUS, HIGH);
   pinMode(BUTTON_PLUS, OUTPUT);
-
   pinMode(BUTTON_INPUT_BOX_1, 0x09); // input pulldown
 }
+
+void HandleOpenedBox()
+{
+  digitalWrite(RELAY_CH1, HIGH); // switch on LED1
+}
+
+void InitBoxSignals()
+{
+  digitalWrite(BOX_LOCKED_VCC_SIGNAL, HIGH);
+  pinMode(BOX_LOCKED_VCC_SIGNAL, OUTPUT);
+  pinMode(BOX_1_LOCKED_SIGNAL, 0x09); // input pulldown
+}
+
 void setup()
 {
   InitButtons();
-
+  InitBoxSignals();
   u8g2.begin(); // setzt das Display auf Bereitschaft
   u8g2.clearBuffer();
   totalInsertedCoinValue = 0;
@@ -104,6 +124,13 @@ void setup()
 
   Serial.begin(9600); // Setup serial at 9600 baud
   InitDisplay();
+  // float val;
+  // EEPROM.get(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, val);
+  // Serial.println(val);
+  // if (!isnan(val))
+  // {
+  //   totalInsertedCoinValue = val;
+  // }
   Serial.println("Ready..");
 }
 
@@ -189,62 +216,104 @@ void DisplaySelectbox()
   u8g2.setFont(u8g2_font_helvB12_tf);
   u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
 
-  sprintf(displayOutput, "Box \xe4hlen");
+  sprintf(displayOutput, "Box w\xe4hlen");
   u8g2.setFont(u8g2_font_helvB12_tf);
   u8g2.drawStr(ALIGN_LEFT, 40, displayOutput);
   u8g2.sendBuffer();
   delay(100);
 }
 
+void DisplayPleaseLockBox()
+{
+
+  u8g2.clearBuffer();
+  sprintf(displayOutput, "Bitte Fach");
+  u8g2.setFont(u8g2_font_helvB12_tf);
+  u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
+
+  sprintf(displayOutput, "Schliessen");
+  u8g2.setFont(u8g2_font_helvB12_tf);
+  u8g2.drawStr(ALIGN_LEFT, 40, displayOutput);
+  u8g2.sendBuffer();
+  delay(100);
+  impulsCount = 0;
+}
+
 void OpenDoor(int relaisChannel, int selectedBox)
 {
+  AcutallyOpenedBox = selectedBox;
   DisplayTakeProduct(selectedBox);
+  digitalWrite(RELAY_CH1, LOW); // switch on LED1
+  delay(1000);
+  digitalWrite(RELAY_CH1, HIGH); // switch on LED1
+  impulsCount = 0;
+}
 
-  digitalWrite(relaisChannel, LOW); // switch on LED1
-  delay(3000);
-  digitalWrite(relaisChannel, HIGH); // switch on LED1
+bool BoxesClosed()
+{
+  Serial.print("BOx signal");
+  Serial.println(digitalRead(BOX_1_LOCKED_SIGNAL));
+  if (digitalRead(BOX_1_LOCKED_SIGNAL) == HIGH)
+  {
+    return true;
+  }
+  HandleOpenedBox();
+  return false;
 }
 
 void HandleBoxSelection()
 {
+
   if (digitalRead(BUTTON_INPUT_BOX_1) == HIGH)
   {
     selectedBox = 1;
   }
 }
+void HandleCoinInsertions()
+{
+  float value = GetInsertedCurrency();
+  if (value > 0)
+  {
+    totalInsertedCoinValue += value;
+    EEPROM.put(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, totalInsertedCoinValue);
+  }
+}
 
 void loop()
 {
-  HandleBoxSelection();
-
-  if (totalInsertedCoinValue >= 7.5)
+  HandleCoinInsertions();
+  if (!BoxesClosed())
   {
-    if (selectedBox == 0)
-    {
-      DisplaySelectbox();
-    }
-    else
-    {
-      selectedBox = 0;
-      totalInsertedCoinValue = 0;
-      OpenDoor(RELAY_CH1, selectedBox);
-    }
+    DisplayPleaseLockBox();
   }
   else
   {
-    if (totalInsertedCoinValue > 0 || selectedBox>0)
+    HandleBoxSelection();
+
+    if (totalInsertedCoinValue >= PriceForBox)
     {
-      PrintCredit();
+      if (selectedBox == 0)
+      {
+        DisplaySelectbox();
+      }
+      else
+      {
+        selectedBox = 0;
+        EEPROM.put(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, 0);
+        totalInsertedCoinValue = 0;
+        OpenDoor(RELAY_CH1, selectedBox);
+      }
     }
     else
     {
-      DisplaySelect();
-    }
-
-    float value = GetInsertedCurrency();
-    if (value > 0)
-    {
-      totalInsertedCoinValue += value;
+      if (totalInsertedCoinValue > 0 || selectedBox > 0)
+      {
+        PrintCredit();
+      }
+      else
+      {
+        DisplaySelect();
+      }
     }
   }
 }
