@@ -15,7 +15,7 @@ Folgende Geräte habe ich im Einsatz
 ## Ardunio UNO 
 Dies ist das Herzstück, hier kann aber auch ein reiner ESP 8266 verwendet werden. 
 Aktuell habe ich den UNO genommen, weil ich den noch frei hatte. 
-![](Img/Arduino.png)
+![](Img/Arduino.PNG)
 
 ## Relais Platine 
 
