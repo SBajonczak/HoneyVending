@@ -10,7 +10,7 @@ Folgende Geräte habe ich im Einsatz
 
 ## OLED 
 [ 0,96 Zoll OLED Display I2C 128 x 64 Pixel](https://www.amazon.de/AZDelivery-Display-Arduino-Raspberry-gratis/dp/B01L9GC470/ref=pd_nav_hcs_rp_2?pd_rd_w=58E2g&pf_rd_p=beed161f-44e1-4e49-9307-12d032ddf97d&pf_rd_r=DNT987TSETN6W7Z4G179&pd_rd_r=ef147d6b-b653-4bab-b445-080992e55942&pd_rd_wg=LUVkn&pd_rd_i=B01L9GC470&psc=1)
-![](/Img/Oled.PNG)
+![](/Img/oled.PNG)
 
 ## Ardunio UNO 
 Dies ist das Herzstück, hier kann aber auch ein reiner ESP 8266 verwendet werden. 
