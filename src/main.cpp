@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include <EEPROM.h>  // Zwischenspeicher
 #include <U8g2lib.h> /* aus dem Bibliotheksverwalter */
-
+#include "CoinDevice.h"
 // Definiert die Pin Belegeung
 #define RELAY_CH1 3
-#define COIN_SELECTOR 0
+#define COIN_SELECTOR_PIN 0
 #define BUTTON_PLUS 4
 #define BUTTON_INPUT_BOX_1 5
 #define BOX_LOCKED_VCC_SIGNAL 7
@@ -13,15 +13,8 @@
 
 // Wer experimentiern will kann dieses Feature Aktivieren.
 // Das sorgt dafür das bereits eingeworfene bzw erkennte Werte nach einem neustart noch vorhanden sind.
-// #define USE_EEPROM
 
-// Dies definiert die Impulse die vom Counter nach dem Anlernen kommen
-// 50 Cent wurden so angelernt das ein Impuls kommt
-// 1 Euro sendet der Münzer zwei Impulse
-// 2 Euro sendet der Münzer drei Impulse
-const int PULSE_AMOUNT_50_CENT = 1;
-const int PULSE_AMOUNT_1_EURO = 2;
-const int PULSE_AMOUNT_2_EURO = 3;
+
 // Dies setzt den Preis fest, der geprüft werden soll
 float PriceForBox = 7.5;
 
@@ -54,41 +47,9 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(
 #define ALIGN_RIGHT(t) (LCDWidth - u8g2.getUTF8Width(t))
 #define ALIGN_LEFT 0
 
-// Handler für den Impuls Pin
-void incomingImpuls()
-{
-  impulsCount = impulsCount + 1;
-  i = 0;
-}
+// The Coin device
+CoinDevice coindevice(COIN_SELECTOR_PIN);
 
-// Ermittlung der eingeworfener Münze
-double GetInsertedCurrency()
-{
-  Serial.print("Impuls ");
-  Serial.print(impulsCount);
-  Serial.print(" counter ");
-  Serial.print(i);
-  Serial.println();
-  i = i + 1;
-  delay(1);
-  if (i >= 5)
-  {
-    switch (impulsCount)
-    {
-    case PULSE_AMOUNT_50_CENT: // 50 cent
-      // totalInsertedCoinValue += 0.5;
-      impulsCount = 0;
-      return 0.5;
-    case PULSE_AMOUNT_1_EURO: // 1 euro
-      impulsCount = 0;
-      return 1;
-    case PULSE_AMOUNT_2_EURO: // 2 euro
-      impulsCount = 0;
-      return 2;
-    }
-  }
-  return 0;
-}
 
 // Initialisier das Display
 void InitDisplay()
@@ -120,8 +81,17 @@ void InitBoxSignals()
   pinMode(BOX_1_LOCKED_SIGNAL, 0x09); // input pulldown
 }
 
+void PrintoutConfiguration(){
+#if USE_EEPROM
+  Serial.println("Using EEPROM");
+#endif
+}
+
 void setup()
 {
+  coindevice.setup();
+
+  PrintoutConfiguration();
   InitButtons();
   InitBoxSignals();
   u8g2.begin(); // setzt das Display auf Bereitschaft
@@ -129,8 +99,6 @@ void setup()
   totalInsertedCoinValue = 0;
   pinMode(RELAY_CH1, OUTPUT);
   digitalWrite(RELAY_CH1, HIGH);
-
-  attachInterrupt(COIN_SELECTOR, incomingImpuls, RISING);
 
   Serial.begin(9600); // Setup serial at 9600 baud
   InitDisplay();
@@ -282,7 +250,7 @@ void HandleBoxSelection()
 }
 void HandleCoinInsertions()
 {
-  float value = GetInsertedCurrency();
+  float value = coindevice.GetInsertedCurrency();
   if (value > 0)
   {
     totalInsertedCoinValue += value;
