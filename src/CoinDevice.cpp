@@ -33,7 +33,7 @@ float CoinDevice::GetInsertedCurrency()
     Serial.println();
     this->_impulsCount++;
     delay(1);
-    if (i >= 5)
+    if (this->_counter >= 5)
     {
         switch (this->_impulsCount)
         {
