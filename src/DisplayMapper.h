@@ -4,10 +4,12 @@
 #include "DisplayMapper.h"
 #include <U8g2lib.h> /* aus dem Bibliotheksverwalter */
 
+
 enum DisplayMode
 {
     PleaseChoose,
-    PleaseClose
+    PleaseClose,
+    TakeProduct
 };
 
 class DisplayMapper
@@ -28,5 +30,6 @@ private:
     char displayOutput[30];
     void DisplayPleaseLockBox();
     void PrintPleaseChoose();
+    void DisplayTakeProduct();
 };
 #endif

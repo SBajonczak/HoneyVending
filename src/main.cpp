@@ -91,78 +91,6 @@ void setup()
   Serial.println("Ready..");
 }
 
-// void PrintCredit()
-// {
-
-//   u8g2.clearBuffer();
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-
-//   strcpy(displayOutput, "Preis: ");
-//   u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
-//   // Print Value
-//   strcpy(displayOutput, "");
-//   dtostrf(PriceForBox, 2, 2, &displayOutput[strlen(displayOutput)]);
-//   u8g2.drawStr(ALIGN_RIGHT(displayOutput), 20, displayOutput);
-
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   strcpy(displayOutput, "Gegeben: ");
-//   u8g2.drawStr(ALIGN_LEFT, 40, displayOutput);
-//   // Print Value
-//   strcpy(displayOutput, "");
-//   dtostrf(totalInsertedCoinValue, 2, 2, &displayOutput[strlen(displayOutput)]);
-//   u8g2.drawStr(ALIGN_RIGHT(displayOutput), 40, displayOutput);
-
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   strcpy(displayOutput, "Fach: ");
-//   u8g2.drawStr(ALIGN_LEFT, 60, displayOutput);
-
-//   if (selectedBox > 0)
-//   {
-//     // Print Value
-//     strcpy(displayOutput, "");
-//     dtostrf(selectedBox, 1, 0, &displayOutput[strlen(displayOutput)]);
-//     u8g2.drawStr(ALIGN_RIGHT(displayOutput), 60, displayOutput);
-//   }
-//   else
-//   {
-//     // Print Value
-//     strcpy(displayOutput, "Keins");
-//     u8g2.drawStr(ALIGN_RIGHT(displayOutput), 60, displayOutput);
-//   }
-//   u8g2.sendBuffer();
-//   delay(100);
-// }
-
-// void DisplayTakeProduct(int selectedBoxNumber)
-// {
-
-//   u8g2.clearBuffer();
-//   sprintf(displayOutput, "Fach %i ist offen ", selectedBoxNumber);
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
-
-//   sprintf(displayOutput, "Vielen Dank :)");
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   u8g2.drawStr(ALIGN_LEFT, 40, displayOutput);
-//   u8g2.sendBuffer();
-//   delay(100);
-// }
-
-// void DisplaySelectbox()
-// {
-
-//   u8g2.clearBuffer();
-//   sprintf(displayOutput, "Bitte");
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   u8g2.drawStr(ALIGN_LEFT, 20, displayOutput);
-
-//   sprintf(displayOutput, "Box w\xe4hlen");
-//   u8g2.setFont(u8g2_font_helvB12_tf);
-//   u8g2.drawStr(ALIGN_LEFT, 40, displayOutput);
-//   u8g2.sendBuffer();
-//   delay(100);
-// }
-
 // void OpenDoor(int relaisChannel, int selectedBox)
 // {
 //   AcutallyOpenedBox = selectedBox;
@@ -207,8 +135,7 @@ void HandleCoinInsertions()
 void loop()
 {
   HandleCoinInsertions();
-  display.SetCurrentPrice(4.0);
-  display.SetGivenCoinValue(2.0);
+  display.Print(TakeProduct);
   return;
   if (!BoxesClosed())
   {
@@ -230,6 +157,7 @@ void loop()
         // Wert in den EEPROM schreiben
         EEPROM.put(EEPROM_INSERTED_AMOUNT_VALUE_INDEX, 0);
         totalInsertedCoinValue = 0;
+        display.Print(TakeProduct);
         // OpenDoor(RELAY_CH1, selectedBox);
       }
     }
