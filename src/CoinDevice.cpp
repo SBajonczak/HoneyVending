@@ -26,11 +26,11 @@ CoinDevice::CoinDevice(int connectedPin)
 // Get the inserted Coin Value
 float CoinDevice::GetInsertedCurrency()
 {
-    Serial.print("Impuls ");
-    Serial.print(this->_impulsCount);
-    Serial.print(" counter ");
-    Serial.print(this->_counter);
-    Serial.println();
+    // Serial.print("Impuls ");
+    // Serial.print(this->_impulsCount);
+    // Serial.print(" counter ");
+    // Serial.print(this->_counter);
+    // Serial.println();
     this->_impulsCount++;
     delay(1);
     if (this->_counter >= 5)
